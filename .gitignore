@@ -1,0 +1,11 @@
+
+# Excluding files that are created by the program I make
+# Executable files
+*.exe
+*.out
+
+# Program Database files
+*.pdb
+
+# Text files 
+*.txt
