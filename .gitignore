@@ -9,3 +9,9 @@
 
 # Text files 
 *.txt
+
+# Ignoring the weird Rust crate files
+2024/Three/target/*
+
+# Ignoring the annoying temporary files
+*/tempCodeRunnerFile.*
