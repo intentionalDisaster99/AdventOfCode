@@ -15,3 +15,8 @@
 
 # Ignoring the annoying temporary files
 */tempCodeRunnerFile.*
+
+# Ignoring the extra files that are auto generated
+*.lock
+target/
+
