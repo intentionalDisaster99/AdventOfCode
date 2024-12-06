@@ -10,11 +10,8 @@
 # Text files 
 *.txt
 
-# Ignoring the weird Rust crate files
-2024/Three/target/*
-
 # Ignoring the annoying temporary files
-*/tempCodeRunnerFile.*
+tempCodeRunnerFile.*
 
 # Ignoring the extra files that are auto generated
 *.lock
