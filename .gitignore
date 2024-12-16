@@ -10,6 +10,9 @@
 # Text files 
 *.txt
 
+# Settings files
+*.json
+
 # Ignoring the annoying temporary files
 tempCodeRunnerFile.*
 
