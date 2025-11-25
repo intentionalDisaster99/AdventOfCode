@@ -20,3 +20,7 @@ tempCodeRunnerFile.*
 *.lock
 target/
 
+# Ignoring any random bin files made
+FirstHalf
+SecondHalf
+

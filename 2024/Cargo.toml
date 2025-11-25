@@ -1,0 +1,15 @@
+[package]
+name = "advent-of-rust-2024"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+priority-queue = "2.7.0"
+
+[[bin]]
+name = "sixteen_part1"
+path = "Sixteen/FirstHalf.rs"
+
+[[bin]]
+name = "sixteen_part2"
+path = "Sixteen/SecondHalf.rs"

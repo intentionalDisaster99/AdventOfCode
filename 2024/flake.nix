@@ -1,5 +1,5 @@
 {
-  description = "NixOS flake for Advent of Rust 2025";
+  description = "NixOS flake for Advent of Rust 2024";
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1"; # unstable Nixpkgs
