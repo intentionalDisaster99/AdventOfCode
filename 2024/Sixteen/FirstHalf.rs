@@ -233,12 +233,12 @@ impl Direction {
 fn read_contents(test: bool) -> String {
     // This loads BOTH files into the executable when you compile.
     // It finds them because they are right next to this .rs file.
-    if test {
-        include_str!("Test.txt").to_string()
-    } else {
-        include_str!("Input.txt").to_string()
-    }
-}
+//     if test {
+//         include_str!("Test.txt").to_string()
+//     } else {
+//         include_str!("Input.txt").to_string()
+//     }
+// }
 
 fn get_words(s: &String) -> Vec<Vec<char>> {
     s.lines()
