@@ -11,3 +11,7 @@ pub fn read_contents(test: bool) -> String {
 pub fn get_lines(s: &String) -> Vec<String> {
     s.lines().map(|x| x.to_string()).collect::<Vec<String>>()
 }
+
+pub fn read_csv(s: &String) -> Vec<String> {
+    s.split(',').map(|x| x.to_string()).collect::<Vec<String>>()
+}
