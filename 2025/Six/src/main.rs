@@ -1,5 +1,5 @@
 mod file_reader;
-use std::ptr::eq;
+use std::{ptr::eq, thread::current};
 
 use crate::file_reader::{ get_lines, read_contents, read_csv };
 
@@ -42,65 +42,64 @@ fn first_half(test: bool) -> u128 {
 
 }
 
-
 fn second_half(test: bool) -> u128 {
     
     let raw_data: String = read_contents(test);
-    let data: Vec<String> = get_lines(&raw_data);
+    let data: Vec<Vec<char>> = get_lines(&raw_data).iter().map(|line| line.chars().collect()).collect(); // Indexed as [y][x]
     let mut out: u128 = 0;
 
-    let operations: Vec<String> = data[data.len()-1]
-        .split_ascii_whitespace()
-        .map(String::from)
-        .collect();
-    let mut problems: Vec<Vec<u128>> = vec![];
-    
-    let mut current_problem_nums: Vec<u128> = vec![];
+    let mut current_operation: char = '.';
+    let mut current_numbers: Vec<u128> = vec![];
 
-    let max_len = data.iter().rev().skip(1).rev()
-        .map(|s| s.len())
-        .max()
-        .unwrap_or(0);
-    for col_index in (0..max_len).rev() {
-        let mut working_num_str = "".to_string();
-        let mut has_digit = false;
-        for row in data.iter().rev().skip(1).rev() {
-            let c = row.chars().nth(col_index).unwrap_or(' ');
-            if c.is_ascii_digit() {
-                working_num_str.push(c);
-                has_digit = true;
-            }
+    // We will be iterating down each column to add numbers to a current buffer, then add/multiply those numbers when we find the empty column
+
+    // Iterating from left to right
+    for x in (0..data[0].len()).rev() {
+
+        let mut num_str = "".to_string();
+
+        // Iterating down the column
+        for y in 0..data.len() {
+
+            match data[y][x] {
+                '*' => { current_operation = '*'; },
+                '+' => { current_operation = '+'; },
+                _ => { num_str = format!("{}{}", num_str, data[y][x]); }
+            };
+
         }
-        if has_digit {
-            let num = working_num_str.parse::<u128>().expect("Vertical Parse Fail");
-            current_problem_nums.push(num);
+
+        // If it is just "" when we trim it, we need to add the numbers
+        num_str = num_str.trim().to_string();
+        if num_str.len() == 0 {
+
+            out += match current_operation {
+                '*' => { current_numbers.iter().fold(1, |prod, x| prod * x) },
+                '+' => { current_numbers.iter().fold(0, |sum, x| sum + x) },
+                '.' => { panic!("Tried to add to out before finding an operation"); },
+                _   => { panic!("How the hell did the operation become {}", current_operation); }
+            };
+
+            current_numbers = vec![];
+
         } else {
-            if !current_problem_nums.is_empty() {
-                problems.push(current_problem_nums);
-                current_problem_nums = vec![];
-            }
+            current_numbers.push(num_str.parse::<u128>().expect(&format!("Bad parsing of '{}'", num_str)));
         }
+
+
+
     }
-    if !current_problem_nums.is_empty() {
-        problems.push(current_problem_nums);
-    }
-    for (i, nums) in problems.iter().enumerate() {
-        let op_index = operations.len() - 1 - i;
-        let operation = &operations[op_index];
-        let mut current = nums[0];
-        for val in nums.iter().skip(1) {
-            if operation == "*" {
-                current *= val;
-            } else {
-                current += val;
-            }
-        }
-        out += current;
-    }
+
+    // Adding the last column in 
+    out += match current_operation {
+        '*' => { current_numbers.iter().fold(1, |prod, x| prod * x) },
+        '+' => { current_numbers.iter().fold(0, |sum, x| sum + x) },
+        '.' => { panic!("Tried to add to out before finding an operation"); },
+        _   => { panic!("How the hell did the operation become {}", current_operation); }
+    };
 
     out
 }
-
 
 // Unit testing
 #[cfg(test)]
