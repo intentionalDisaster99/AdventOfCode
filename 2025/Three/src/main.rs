@@ -58,7 +58,7 @@ fn second_half(test: bool) -> u128 {
 
     for (i, bank) in data.iter().enumerate() {
         sum += get_highest_value(bank, 12);
-        println!("{}/{}",i, total_number);
+        println!("{}/{}", i, total_number);
     }
 
     sum
