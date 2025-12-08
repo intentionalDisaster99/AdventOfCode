@@ -3,18 +3,21 @@ mod board;
 use crate::file_reader::*;
 use crate::board::*;
 use itertools::Itertools;
-use std::collections::HashMap;
-use std::thread::current;
+use std::time::Instant;
 use std::cmp::Reverse;
 use priority_queue::PriorityQueue;
 
 
 fn main() {
 
-
-
+    let start: Instant = Instant::now();
     print!("First half answer: {}\n", first_half(false));
+    let duration_first = start.elapsed();
     print!("Second half answer: {}\n", second_half(false));
+    let duration_second = start.elapsed();
+
+    println!("First half took: {:?}", duration_first);
+    println!("Second half took: {:?}", duration_second);
 
 }
 

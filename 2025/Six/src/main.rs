@@ -1,4 +1,6 @@
 mod file_reader;
+use std::ops::Add;
+
 use crate::file_reader::{ get_lines, read_contents, read_csv };
 
 fn main() {
@@ -123,4 +125,29 @@ mod tests {
     }
 
 
+}
+
+
+// Codewars stuff
+
+fn increment_string(s: &str) -> String {
+    if s.len() == 0 { return "1".to_string(); }
+    let mut characters = s.chars().collect::<Vec<char>>();
+    for (i, c) in characters.clone().iter().enumerate().rev() {
+        println!("Working with {:#?}", characters);
+        if !c.is_ascii_digit() {
+            println!("Adding a 1");
+            characters.insert(i + 1, '1');
+            break;
+        } else if c.is_ascii_digit() {
+            if c == &'9' {
+                characters[i] = '0';
+            } else {
+                characters[i] = (characters[i].to_string().parse::<u8>().unwrap() + 1).to_string().chars().collect::<Vec<char>>()[0];
+                break;
+            }
+        }
+    }
+    println!("Ended with {:#?}", characters);
+    characters.into_iter().collect::<String>()
 }
