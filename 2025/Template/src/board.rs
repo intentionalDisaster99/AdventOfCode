@@ -68,7 +68,7 @@ impl std::fmt::Debug for Board {
 }
 
 
-// Now for the position struct: a simple 2d vector
+// Now for the position struct: a simple 2D vector
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub struct Pos {
     x: usize,
@@ -86,7 +86,38 @@ impl Pos {
         Pos::new(self.x + other.x, self.y + other.y)
     }
 
-    pub fn dot(&self, other: Pos) -> Pos {
-        Pos::new(self.x * other.x, self.y * other.y)
+    pub fn dot(&self, other: Pos) -> usize {
+        self.x * other.x + self.y * other.y
     }
 }
+
+
+
+// Same thing as the position struct but for 3D positions (thank you 2025-8)
+#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+
+pub struct Pos3 {
+    x: usize,
+    y: usize,
+    z: usize,
+}
+
+impl Pos3 {
+
+    pub fn new(x: usize, y: usize, z: usize) -> Pos3 {
+        Pos3{x, y, z}
+    }
+
+    pub fn add(&self, other: Pos3) -> Pos3 {
+        Pos3::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    }
+
+    pub fn dot(&self, other: Pos3) -> usize {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+}
+
+
+
+
