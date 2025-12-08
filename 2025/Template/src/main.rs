@@ -10,7 +10,7 @@ const SECOND_HALF_ANSWER: Option<u128> = None;
 
 fn main() {
     // Running and timing everything
-    println!("{:-^50}", " results ");
+    println!("\n{:-^50}", " results ");
     let start: Instant = Instant::now();
     print!("First half answer: {}\n", first_half(false));
     let duration_first = start.elapsed();
