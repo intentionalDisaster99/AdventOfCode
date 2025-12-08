@@ -5,23 +5,31 @@ use crate::board::*;
 use std::time::Instant;
 
 
-const FIRST_HALF_ANSWER: Option<u128> = Some(42); // Set your actual answer
-const SECOND_HALF_ANSWER: Option<u128> = Some(123);
+const FIRST_HALF_ANSWER: Option<u128> = None;
+const SECOND_HALF_ANSWER: Option<u128> = None;
 
 fn main() {
+    // Running and timing everything
+    println!("{:-^50}", " results ");
     let start: Instant = Instant::now();
     print!("First half answer: {}\n", first_half(false));
     let duration_first = start.elapsed();
-    print!("Second half answer: {}\n", second_half(false));
+    print!("Second half answer: {}\n\n", second_half(false));
     let duration_second = start.elapsed();
 
-    println!("\n\nFirst half took: {:?}", duration_first);
+    // Showing the times
+    println!("{:-^50}", " times ");
+    println!("First half took: {:?}", duration_first);
     println!("Second half took: {:?}\n", duration_second);
 
     // Printing out what happened with the tests
-    println!("First half {}", {if first_half_check() {"passing!"} else {"FAILING"}});
-    println!("Second half {}", {if second_half_check() {"passing!"} else {"FAILING"}});
-    
+    println!("{:-^50}", " tests ");
+    second_half_check();
+    first_half_check(); 
+
+    // A line at the bottom because I like how it looks
+    println!("\n{:-^50}", "-");
+
 }
 
 fn first_half(test: bool) -> u128 {
@@ -71,17 +79,17 @@ mod tests {
 }
 
 // Duplicate functions so that we can run them normally 
-fn first_half_check() -> bool {
+fn first_half_check() {
     let answer: Option<u128> = FIRST_HALF_ANSWER;
     match answer {
-        None => panic!("Not yet added"),
-        Some(a) => a == first_half(true),
+        None => {println!("First half test answer not given")},
+        Some(a) => { println!("First half {}", {if a == first_half(true){"passing!"} else {"FAILING"}})},
     }
 }
-fn second_half_check() -> bool {
+fn second_half_check() {
     let answer: Option<u128> = SECOND_HALF_ANSWER;
     match answer {
-        None => false,
-        Some(a) => a == second_half(true),
+        None => {println!("Second half test answer not given")},
+        Some(a) => { println!("Second half {}", {if a == first_half(true){"passing!"} else {"FAILING"}})},
     }
 }
