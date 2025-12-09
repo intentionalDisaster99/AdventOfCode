@@ -4,7 +4,7 @@
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct Board {
-    board: Vec<Vec<char>>,
+    pub board: Vec<Vec<char>>,
 }
 
 
@@ -71,8 +71,8 @@ impl std::fmt::Debug for Board {
 // Now for the position struct: a simple 2D vector
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub struct Pos {
-    x: usize,
-    y: usize,
+    pub x: usize,
+    pub y: usize,
 }
 
 // All of the methods, unless otherwise specified are designed to create a new position because it isn't a large amount of memory
@@ -82,16 +82,29 @@ impl Pos {
         Pos{x,y}
     }
 
-    pub fn add(&self, other: Pos) -> Pos {
+    pub fn add(&self, other: &Pos) -> Pos {
         Pos::new(self.x + other.x, self.y + other.y)
     }
 
     pub fn dot(&self, other: Pos) -> usize {
         self.x * other.x + self.y * other.y
     }
+
+    pub fn mul(&self, scalar: usize) -> Pos {
+        Pos::new(self.x * scalar, self.y * scalar)
+    }
+
+    pub fn div(&self, scalar: f64) -> Pos {
+        Pos::new((self.x as f64 / scalar) as usize,(self.x as f64 / scalar) as usize)
+    }
 }
 
+impl std::fmt::Display for Pos {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
 
+    }
+}
 
 // Same thing as the position struct but for 3D positions (thank you 2025-8)
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
@@ -118,6 +131,10 @@ impl Pos3 {
 
 }
 
-
+impl std::fmt::Display for Pos3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        writeln!(f, "({}, {}, {})", self.x, self.y, self.z)
+    }
+}
 
 
