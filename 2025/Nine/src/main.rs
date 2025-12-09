@@ -15,7 +15,7 @@ fn main() {
     let start: Instant = Instant::now();
     print!("First half answer: {}\n", first_half(false));
     let duration_first = start.elapsed();
-    print!("Second half answer: {}\n\n", second_half(false));
+    // print!("Second half answer: {}\n\n", second_half(false));
     let duration_second = start.elapsed();
 
     // Showing the times
@@ -61,8 +61,6 @@ fn first_half(test: bool) -> u128 {
     highest
 
 }
-
-
 
 fn second_half(test: bool) -> u128 {
     
@@ -213,104 +211,6 @@ fn second_half(test: bool) -> u128 {
 }
 
 
-fn memory_intensive_second_half(test: bool) -> u128 {
-    
-    let raw_data: String = read_contents(test);
-    let data: Vec<String> = get_lines(&raw_data);
-
-    // Making a vector of all of the positions we have
-    let mut reds: Vec<Pos> = data.iter().map( |row| {
-        let temp= row.split(",").collect::<Vec<&str>>();
-        let x = temp[0].parse::<usize>().unwrap();   
-        let y = temp[1].parse::<usize>().unwrap();
-        Pos::new(x,y)
-    }).collect::<Vec<Pos>>();
-
-    // Finding the bounds of the board
-    let mut height: usize = 0;
-    let mut width: usize = 0;
-    for red in reds.iter() {
-        if red.x > width { width = red.x }
-        if red.y > height { height = red.y }
-    }
-
-    // Making a board that I can play with
-    let mut input: Vec<Vec<char>> = vec![];
-
-    for y in 0..height+2 {
-        input.push(vec!['.'; width + 2]);
-    }
-    let mut board = Board::new(input);
-
-    
-    // Adding the Red ones and the greens connecting them
-    board.set(&reds[0], '#'); // Adding the first
-    for (i, red) in reds.iter().enumerate().skip(1) {
-        board.set(&red, '#');
-        
-        // Adding the connecting green to the one before
-        if red.x != reds[i - 1].x { 
-            // Iterating across all of the ones that we need to add
-            for j in (std::cmp::min(red.x, reds[i-1].x) + 1)..(std::cmp::max(red.x, reds[i-1].x)) {
-                board.set(&Pos::new(j, red.y), 'X');
-            }
-        } else {
-            // Iterating across all of the ones that we need to add
-            for j in (std::cmp::min(red.y, reds[i-1].y) + 1)..(std::cmp::max(red.y, reds[i-1].y)) {
-                board.set(&Pos::new(red.x, j), 'X');
-            }
-        }
-    }
-
-    // Adding the connection between the last two
-    if reds[reds.len() - 1].x != reds[0].x { 
-        // Iterating across all of the ones that we need to add
-        for j in (std::cmp::min(reds[reds.len() - 1].x, reds[0].x) + 1)..(std::cmp::max(reds[reds.len() - 1].x, reds[0].x)) {
-            board.set(&Pos::new(j, reds[reds.len() - 1].y), 'X');
-        }
-    } else {
-        // Iterating across all of the ones that we need to add
-        for j in (std::cmp::min(reds[reds.len() - 1].y, reds[0].y) + 1)..(std::cmp::max(reds[reds.len() - 1].y, reds[0].y)) {
-            board.set(&Pos::new(reds[reds.len() - 1].x, j), 'X');
-        }
-    }
-
-
-    // Now filling in the board with greens
-    println!("Starting flood");
-    // flood_fill(&mut board);
-    
-    // Now that we have a filled space, we need to just check to see which ones work best
-    let mut highest: u128 = 0;
-    for (i, this) in reds.iter().enumerate() {
-        println!("{}/{}", i, reds.len());
-        'inner_loop: for other in reds.iter().skip(i + 1) {
-
-            // Making sure this one works
-            for y in (std::cmp::min(this.y, other.y) + 1)..(std::cmp::max(this.y, other.y)) {
-                for x in (std::cmp::min(this.x, other.x) + 1)..(std::cmp::max(this.x, other.x)) {
-                    if board.get(&Pos::new(x, y)) != 'X' {
-                        let old = board.get(&Pos::new(x, y));
-                        board.set(&Pos::new(x, y), 'O');
-                        println!("Skipping because this one doesn't fit\n{}", board);
-                        // board.set(&Pos::new(x, y), old);
-                        continue 'inner_loop;
-                    }
-                }
-            }
-
-            let score = ((this.x as isize - other.x as isize).abs() + 1) * ((this.y as isize - other.y as isize).abs() + 1);
-            if score as u128 > highest {
-                highest = score as u128;
-            }
-        }
-    }
-    println!("Finished board:\n{}", board);
-
-    highest    
-
-}
-
 
 
 fn flood_fill_1d_vector(start: Pos, grid: &mut Vec<u32>, width: usize, height: usize) {
@@ -345,102 +245,6 @@ fn flood_fill_1d_vector(start: Pos, grid: &mut Vec<u32>, width: usize, height: u
     println!("Flood fill finished! Filled {} tiles.", count);
 
 }
-
-fn flood_fill_hashmap(start: Pos, board: &mut HashMap<Pos, bool>) {
-    
-    let mut to_check = vec![start];
-
-    while let Some(working_pos) = to_check.pop() {        // println!("{}", to_check.len());
-
-        // Checking each direction
-        // 1. UP
-        let up = Pos::new(working_pos.x, working_pos.y + 1);
-        if !board.contains_key(&up) {
-            board.insert(up.clone(), true);
-            to_check.push(up);
-        }
-
-        // 2. RIGHT
-        let right = Pos::new(working_pos.x + 1, working_pos.y);
-        if !board.contains_key(&right) {
-            board.insert(right.clone(), true);
-            to_check.push(right);
-        }
-
-        // 3. LEFT (Check bounds!)
-        if working_pos.x > 0 {
-            let left = Pos::new(working_pos.x - 1, working_pos.y);
-            if !board.contains_key(&left) {
-                board.insert(left.clone(), true);
-                to_check.push(left);
-            }
-        }
-
-        // 4. DOWN (Check bounds!)
-        if working_pos.y > 0 {
-            let down = Pos::new(working_pos.x, working_pos.y - 1);
-            if !board.contains_key(&down) {
-                board.insert(down.clone(), true);
-                to_check.push(down);
-            }
-        }
-
-    }
-
-}
-
-fn flood_fill_board(board: &mut Board) {
-
-    let mut to_check: Vec<Pos> = vec![];
-    let mut checked: Vec<Pos> = vec![];
-
-    // Finding the starting point
-    for (y, row) in board.board.clone().iter().enumerate() {
-        let mut inside: bool = false;
-        for (x, c) in row.iter().enumerate() {
-            if *c == '#' {
-                // We just don't want to worry about it if it is a corner
-                break;
-            }
-            if *c == 'X' {
-                inside = !inside;
-                continue;
-            }
-            if inside {
-                to_check.push(Pos::new(x, y));
-                break;
-            }
-        }
-        if to_check.len() != 0 { break; }
-    }
-
-    if to_check.len() == 0 { panic!("Could not find inside") }
-
-    while let Some(pos) = to_check.pop() {
-        // If it's already filled  or a wall, skip it.
-        let current = board.get(&pos);
-        if current == 'X' || current == '#' { 
-            continue;
-        }
-
-        // Mark it IMMEDIATELY so we don't add it again later
-        board.set(&pos, 'X');
-
-        // --- 3. Neighbors ---
-        // Right
-        if pos.x + 1 < board.board[0].len() { to_check.push(Pos::new(pos.x + 1, pos.y)); }
-        // Down
-        if pos.y + 1 < board.board.len() { to_check.push(Pos::new(pos.x, pos.y + 1)); }
-        // Left
-        if pos.x > 0 { to_check.push(Pos::new(pos.x - 1, pos.y)); }
-        // Up
-        if pos.y > 0 { to_check.push(Pos::new(pos.x, pos.y - 1)); }
-    }
-    
-
-}
-
-
 // Unit testing
 #[cfg(test)]
 mod tests {
