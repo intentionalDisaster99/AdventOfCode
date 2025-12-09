@@ -3,8 +3,10 @@ mod board;
 use crate::file_reader::*;
 use crate::board::*;
 use std::time::Instant;
-use std::collections::HashMap;
 use std::collections::VecDeque;
+use colored::Colorize;
+use indicatif::*; // I wanna try something
+
 
 const FIRST_HALF_ANSWER: Option<u128> = Some(50);
 const SECOND_HALF_ANSWER: Option<u128> = Some(24);
@@ -13,10 +15,14 @@ fn main() {
     // Running and timing everything
     println!("\n{:-^50}", " results ");
     let start: Instant = Instant::now();
-    print!("First half answer: {}\n", first_half(false));
+    print!("First half answer: {}\n", first_half(false).to_string().bold());
     let duration_first = start.elapsed();
-    // print!("Second half answer: {}\n\n", second_half(false));
+    print!("Second half answer: {}\n", second_half(false).to_string().bold());
     let duration_second = start.elapsed();
+    println!("The second half should be 1343576598");
+    println!();
+
+
 
     // Showing the times
     println!("{:-^50}", " times ");
@@ -63,13 +69,11 @@ fn first_half(test: bool) -> u128 {
 }
 
 fn second_half(test: bool) -> u128 {
-    
     let raw_data: String = read_contents(test);
     let data: Vec<String> = get_lines(&raw_data);
 
-
-    // Making a vector of all of the positions we have
-    let mut carpets: Vec<Pos> = data.iter().map(|row| {
+    // Saving these for later
+    let corners: Vec<Pos> = data.iter().map(|row| {
         let temp = row.split(",").collect::<Vec<&str>>();
         Pos::new(
             temp[0].parse::<usize>().unwrap(),
@@ -77,132 +81,134 @@ fn second_half(test: bool) -> u128 {
         )
     }).collect();
 
-    // Remembering where the red tiles are for later
-    let reds = carpets.clone();
+    // Compressing the coordinates
+    // We collect every relevant X and Y coordinate. These are just the corners plus an extra on each side of the corner
+    let mut xs = Vec::new();
+    let mut ys = Vec::new();
 
-    // Adding connections between each square
-    println!("Adding connections");
-    let corners = carpets.clone();
+    for c in &corners {
+        xs.push(c.x);
+        xs.push(c.x + 1);
+        ys.push(c.y);
+        ys.push(c.y + 1);
+    }
+
+    xs.sort_unstable();
+    xs.dedup();
+    ys.sort_unstable();
+    ys.dedup();
+
+    // Map real coords to grid indices
+    let get_x_idx = |x: usize| xs.binary_search(&x).unwrap();
+    let get_y_idx = |y: usize| ys.binary_search(&y).unwrap();
+
+    // The compressed grid size
+    // We have xs.len() - 1 intervals. 
+    let width = xs.len() - 1;
+    let height = ys.len() - 1;
+    
+    // Use u8 to save memory
+    let mut grid = vec![0u8; width * height];
+
+    // Connecting the corners
     for (i, this) in corners.iter().enumerate() {
-        let other = corners[(i + 1) % corners.len()].clone();
+        let other = &corners[(i + 1) % corners.len()];
 
-        if this.x != other.x {
-            let x_range: (usize, usize) = (std::cmp::min(this.x, other.x), std::cmp::max(this.x, other.x));
-            for x in (x_range.0..x_range.1).skip(1) {
-                carpets.push(Pos::new(x, this.y));
+        // Find the indices in our compressed grid
+        let x1 = get_x_idx(this.x.min(other.x));
+        let x2 = get_x_idx(this.x.max(other.x) + 1); // Exclusive end index
+        let y1 = get_y_idx(this.y.min(other.y));
+        let y2 = get_y_idx(this.y.max(other.y) + 1); // Exclusive end index
+
+        if this.x == other.x {
+            // Vertical Wall
+            for y in y1..y2 {
+                grid[y * width + x1] = 1;
             }
         } else {
-            let y_range: (usize, usize) = (std::cmp::min(this.y, other.y), std::cmp::max(this.y, other.y));
-            for y in (y_range.0..y_range.1).skip(1) {
-                carpets.push(Pos::new(this.x, y));
+            // Horizontal Wall
+            for x in x1..x2 {
+                grid[y1 * width + x] = 1;
             }
         }
     }
-    println!("Connections added.\nLooking for inside.");
 
-    // We need to find a wall that is vertical, so basically just not where there is a corner
-    let mut corner_ys: Vec<usize> = corners.iter().map(|c| c.y).collect();
-    corner_ys.sort_unstable();
-    corner_ys.dedup();
-    let mut start_y = 0;
-    let mut found_safe_row = false;
-    for window in corner_ys.windows(2) {
-        if window[1] > window[0] {
-            found_safe_row = true;
-            start_y = window[0] + 1;
-            break;
-        }
-    }
+    // Finding the inside
+    let mut start_node = Pos::new(0, 0);
+    let mut found = false;
 
-    if !found_safe_row {
-        // Fallback: This usually only happens in tiny 2x2 box maps
-        panic!("No vertical segments found");
-    }
-
-    // Now that the order doesn't matter, I will convert to a hashmap
-    let mut hashbrown: HashMap<Pos, bool> = HashMap::new();
-    for carpet in carpets.iter() {
-        hashbrown.insert(carpet.clone(), true);
-    }
-
-    // Now we need to look for a safe column
-    let min_x = corners.iter().map(|p| p.x).min().unwrap_or(0);
-    let max_x = corners.iter().map(|p| p.x).max().unwrap_or(0);
-
-    let mut start = Pos::new(0, 0);
-    let mut found_start = false;
-
-    for x in min_x..=max_x {
-        let p = Pos::new(x, start_y);
-                if hashbrown.contains_key(&p) {
-            start = Pos::new(x + 1, start_y);
-            found_start = true;
+    // Assuming that we will have an inside at half the height
+    let mid_y = height / 2;
+    for x in 0..width-1 {
+        let idx = mid_y * width + x;
+        // If this is a wall, and the next spot is empty
+        if grid[idx] == 1 && grid[idx+1] == 0 {
+            start_node = Pos::new(x + 1, mid_y);
+            found = true;
             break;
         }
     }
     
-    if !found_start {
-        panic!("Could not find inside");
+    // If the inside is not at half the height, we have to do this fun thing
+    if !found {
+        'search: for y in 0..height {
+            for x in 0..width-1 {
+                if grid[y*width+x] == 1 && grid[y*width+x+1] == 0 {
+                    start_node = Pos::new(x + 1, y);
+                    found = true;
+                    break 'search;
+                }
+            }
+        }
     }
+    
+    if !found { panic!("No inside found"); }
 
-    println!("Inside found.\nBeginning flood.");
+    // Flooding the thing
+    flood_fill_scan_line(start_node, &mut grid, width, height);
 
-    // Converting to a grid because it is slightly faster
-    let width = carpets.iter().map(|p| p.x).max().unwrap_or(0) + 4;
-    let height = carpets.iter().map(|p| p.y).max().unwrap_or(0) + 4;
-    let mut grid = vec![0u32; width * height];
-
-    // Mark the walls
-    for wall in carpets.into_iter() {
-        grid[wall.y * width + wall.x] = 1;
-    }
-
-    // Now to fill in inside carpets
-    flood_fill_1d_vector(start, &mut grid, width, height);
-
-    println!("Flood complete.\nSearching for answer.");
-
-    // Create a 2D Prefix Sum grid (1-based indexing to avoid boundary checks) (my poor poor ram)
-    // p_sum[y][x] stores the count of filled pixels in the rectangle from (0,0) to (x-1, y-1)
+    // Weighted prefix sum <-- this is apparently a thing from graphics programming? Anyways, it makes it faster to find an area
+    // If I'm being honest, I don't fully understand this, but it works so there's that
+    let mut sum_grid = vec![0u128; width * height];
     for y in 0..height {
         for x in 0..width {
             let idx = y * width + x;
-            let current_val = grid[idx]; // This is 0 or 1
-            
-            let left = if x > 0 { grid[idx - 1] } else { 0 };
-            let top = if y > 0 { grid[(y - 1) * width + x] } else { 0 };
-            let top_left = if x > 0 && y > 0 { grid[(y - 1) * width + (x - 1)] } else { 0 };
-
-            // Overwrite the cell with the sum
-            grid[idx] = current_val + left + top - top_left;
+            let cell_w = (xs[x+1] - xs[x]) as u128;
+            let cell_h = (ys[y+1] - ys[y]) as u128;
+            let current_area = if grid[idx] == 1 { cell_w * cell_h } else { 0 };
+            let left = if x > 0 { sum_grid[idx - 1] } else { 0 };
+            let top = if y > 0 { sum_grid[(y - 1) * width + x] } else { 0 };
+            let top_left = if x > 0 && y > 0 { sum_grid[(y - 1) * width + (x - 1)] } else { 0 };
+            sum_grid[idx] = current_area + left + top - top_left;
         }
     }
 
-    // Now we just need to check to see which reds make the biggest rectangle
+    // Checking all of the rectangles we have
     let mut highest: u128 = 0;
-    for (i, this) in reds.iter().enumerate() {
-        for other in reds.iter().skip(i + 1) {
-            let min_x = this.x.min(other.x);
-            let max_x = this.x.max(other.x);
-            let min_y = this.y.min(other.y);
-            let max_y = this.y.max(other.y);
-
-            let w = (max_x - min_x + 1) as u128;
-            let h = (max_y - min_y + 1) as u128;
-
-            if w * h <= highest { continue; }
-
-            // Integral Image Lookup on Flat Grid
-            // P(x,y) is at grid[y * width + x]
-            let bottom_right = grid[max_y * width + max_x];
-            let bottom_left  = if min_x > 0 { grid[max_y * width + (min_x - 1)] } else { 0 };
-            let top_right    = if min_y > 0 { grid[(min_y - 1) * width + max_x] } else { 0 };
-            let top_left     = if min_x > 0 && min_y > 0 { grid[(min_y - 1) * width + (min_x - 1)] } else { 0 };
-
-            let actual_area = bottom_right - bottom_left - top_right + top_left;
-
-            if actual_area as u128 == w * h {
-                highest = w * h;
+    for (i, this) in corners.iter().enumerate() {
+        for other in corners.iter().skip(i + 1) {
+            // Again, I will have to look into these things more later but the pseudo code I followed works lol
+            let min_rx = this.x.min(other.x);
+            let max_rx = this.x.max(other.x);
+            let min_ry = this.y.min(other.y);
+            let max_ry = this.y.max(other.y);
+            let w = (max_rx - min_rx + 1) as u128;
+            let h = (max_ry - min_ry + 1) as u128;
+            let target_area = w * h;
+            if target_area <= highest { continue; }
+            let x1 = get_x_idx(min_rx);
+            let x2 = get_x_idx(max_rx + 1);
+            let y1 = get_y_idx(min_ry);
+            let y2 = get_y_idx(max_ry + 1);
+            let rx = x2 - 1;
+            let ry = y2 - 1;
+            let bottom_right = sum_grid[ry * width + rx];
+            let bottom_left  = if x1 > 0 { sum_grid[ry * width + (x1 - 1)] } else { 0 };
+            let top_right    = if y1 > 0 { sum_grid[(y1 - 1) * width + rx] } else { 0 };
+            let top_left     = if x1 > 0 && y1 > 0 { sum_grid[(y1 - 1) * width + (x1 - 1)] } else { 0 };
+            let filled_area = bottom_right + top_left - bottom_left - top_right;
+            if filled_area == target_area {
+                highest = target_area;
             }
         }
     }
@@ -210,41 +216,46 @@ fn second_half(test: bool) -> u128 {
     highest
 }
 
+fn flood_fill_scan_line(start: Pos, grid: &mut Vec<u8>, width: usize, height: usize) {
 
+    // If we start on something that is wrong, we can't really do this
+    if grid[start.y * width + start.x] == 1 { return; }
 
+    // Using a dequeue because it is slightly faster for a queue like this
+    let mut q = VecDeque::new();
+    q.push_back(start);
 
-fn flood_fill_1d_vector(start: Pos, grid: &mut Vec<u32>, width: usize, height: usize) {
+    while let Some(pos) = q.pop_front() {
 
-    let mut q = VecDeque::new(); // VecDeque is faster than Vec for queues
-    q.push_back(start.clone());
+        // Noting the location
+        let mut x = pos.x;
+        let y = pos.y;
+        let row_idx = y * width;
 
-    // Marking the start
-    if grid[start.y * width + start.x] == 0 {
-        grid[start.y * width + start.x] = 1;
-    }
+        
+        while x > 0 && grid[row_idx + x - 1] == 0 { x -= 1; }
 
-    let mut count: u128 = 0;
+        let mut span_above = false;
+        let mut span_below = false;
 
-   while let Some(p) = q.pop_front() {
-        count +=1;
-        // I learned what a closure is :)
-        let mut check = |nx: usize, ny: usize| {
-            let idx = ny * width + nx;
-            if grid[idx] == 0 {
-                grid[idx] = 1;
-                q.push_back(Pos::new(nx, ny));
+        while x < width && grid[row_idx + x] == 0 {
+            grid[row_idx + x] = 1;
+
+            if y > 0 {
+                if grid[(y - 1) * width + x] == 0 {
+                    if !span_above { q.push_back(Pos::new(x, y - 1)); span_above = true; }
+                } else { span_above = false; }
             }
-        };
-
-        if p.y > 0 { check(p.x, p.y - 1); }
-        if p.y < height - 1 { check(p.x, p.y + 1); }
-        if p.x > 0 { check(p.x - 1, p.y); }
-        if p.x < width - 1 { check(p.x + 1, p.y); }
+            if y < height - 1 {
+                if grid[(y + 1) * width + x] == 0 {
+                    if !span_below { q.push_back(Pos::new(x, y + 1)); span_below = true; }
+                } else { span_below = false; }
+            }
+            x += 1;
+        }
     }
-
-    println!("Flood fill finished! Filled {} tiles.", count);
-
 }
+
 // Unit testing
 #[cfg(test)]
 mod tests {
@@ -275,13 +286,13 @@ fn first_half_check() {
     let answer: Option<u128> = FIRST_HALF_ANSWER;
     match answer {
         None => {println!("First half test answer not given")},
-        Some(a) => { println!("First half {}", {if a == first_half(true){"passing!"} else {"FAILING"}})},
+        Some(a) => { println!("First half {}", {if a == first_half(true){"passing!".green()} else {"FAILING".bold().red()}})},
     }
 }
 fn second_half_check() {
     let answer: Option<u128> = SECOND_HALF_ANSWER;
     match answer {
         None => {println!("Second half test answer not given")},
-        Some(a) => { println!("Second half {}", {if a == second_half(true){"passing!"} else {"FAILING"}})},
+        Some(a) => { println!("Second half {}", {if a == second_half(true){"passing!".green()} else {"FAILING".bold().red()}})},
     }
 }
