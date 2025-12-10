@@ -1,8 +1,10 @@
 mod file_reader;
 mod board;
 use crate::file_reader::*;
+#[allow(unused_imports)]
 use crate::board::*;
 use std::time::Instant;
+use colored::Colorize;
 
 
 const FIRST_HALF_ANSWER: Option<u128> = None;
@@ -10,12 +12,19 @@ const SECOND_HALF_ANSWER: Option<u128> = None;
 
 fn main() {
     // Running and timing everything
-    println!("\n{:-^50}", " results ");
     let start: Instant = Instant::now();
-    print!("First half answer: {}\n", first_half(false));
+    let first_answer = first_half(false);
     let duration_first = start.elapsed();
-    print!("Second half answer: {}\n\n", second_half(false));
+    let second_answer = second_half(false);
     let duration_second = start.elapsed();
+
+    // Printing
+    println!("\n{:-^50}", " results ");
+    print!("First half answer:  {}", first_answer.to_string().bold());
+    if FIRST_HALF_ANSWER == None { println!("{}", " <--Warning, first half test is not initialized.".red()); }
+    print!("Second half answer: {}", second_answer.to_string().bold());
+    if SECOND_HALF_ANSWER == None { println!("{}", " <--Warning, second half test is not initialized.".red()); }
+    println!();
 
     // Showing the times
     println!("{:-^50}", " times ");
@@ -28,9 +37,10 @@ fn main() {
     first_half_check(); 
 
     // A line at the bottom because I like how it looks
-    println!("\n{:-^50}", "-");
+    print!("\n{:-^50}", "-");
 
 }
+
 
 fn first_half(test: bool) -> u128 {
 
