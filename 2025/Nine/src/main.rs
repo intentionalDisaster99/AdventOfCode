@@ -5,7 +5,6 @@ use crate::board::*;
 use std::time::Instant;
 use std::collections::VecDeque;
 use colored::Colorize;
-use indicatif::*; // I wanna try something
 
 
 const FIRST_HALF_ANSWER: Option<u128> = Some(50);
@@ -103,7 +102,7 @@ fn second_half(test: bool) -> u128 {
     let get_y_idx = |y: usize| ys.binary_search(&y).unwrap();
 
     // The compressed grid size
-    // We have xs.len() - 1 intervals. 
+    // We have xs.len() - 1 intervals
     let width = xs.len() - 1;
     let height = ys.len() - 1;
     
