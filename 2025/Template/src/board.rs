@@ -130,6 +130,14 @@ impl Pos3 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
+    pub fn mul(&self, scalar: usize) -> Pos3 {
+        Pos3::new(self.x * scalar, self.y * scalar, self.z * scalar)
+    }
+
+    pub fn div(&self, scalar: f64) -> Pos3 {
+        Pos3::new((self.x as f64 / scalar) as usize,(self.x as f64 / scalar) as usize, (self.z as f64 / scalar) as usize)
+    }
+
 }
 
 impl std::fmt::Display for Pos3 {
