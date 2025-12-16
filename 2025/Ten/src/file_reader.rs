@@ -2,6 +2,7 @@
 mod board;
 use crate::board::*;
 // I actually have no idea where this file wants the files to be located. I haven't changed this from day to day and it only worked in different places each day ¯\_(ツ)_/¯
+// So it seems that it likes to work with a separate input file on my PC and with a nested input file on my laptop
 
 // Stuff to read the input
 use std::fs;

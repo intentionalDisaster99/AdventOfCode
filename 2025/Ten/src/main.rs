@@ -23,14 +23,14 @@ fn main() {
     let start: Instant = Instant::now();
     let first_answer = first_half(false);
     let duration_first = start.elapsed();
-    // let second_answer = second_half(false);
+    let second_answer = second_half(false);
     let duration_second = start.elapsed() - duration_first;
 
     // Printing
     println!("\n{:-^50}", " results ");
     print!("First half answer:  {}", first_answer.to_string().bold());
     if FIRST_HALF_ANSWER == None { println!("{}", " <--Warning, first half test is not initialized.".red()); }
-    // print!("Second half answer: {}", second_answer.to_string().bold());
+    print!("Second half answer: {}", second_answer.to_string().bold());
     if SECOND_HALF_ANSWER == None { println!("{}", " <--Warning, second half test is not initialized.".red()); }
     println!();
 
@@ -232,35 +232,35 @@ fn second_half(test: bool) -> u128 {
     // My next thought is optimization problem, but there isn't exactly a clear function for it.
 
     // I will make a function to make iteration nicer
-    // let total_jobs = 171;
-    // let counter = AtomicUsize::new(0);
+    let total_jobs = 171;
+    let counter = AtomicUsize::new(0);
 
-    // let out = buttons.par_iter()
-    //     .zip(answers.par_iter())
-    //     .map(|(btns, ans)| {
-    //         // Do the heavy lifting
-    //         let result = find_minimum2(btns, ans);
+    let out = buttons.par_iter()
+        .zip(answers.par_iter())
+        .map(|(btns, ans)| {
+            // Do the heavy lifting
+            let result = find_minimum2(btns, ans);
 
-    //         // atomic increment
-    //         // fetch_add returns the PREVIOUS value, so add 1 for display
-    //         let completed = counter.fetch_add(1, Ordering::Relaxed) + 1;
+            // atomic increment
+            // fetch_add returns the PREVIOUS value, so add 1 for display
+            let completed = counter.fetch_add(1, Ordering::Relaxed) + 1;
             
-    //         // Print progress. 
-    //         // Note: In parallel code, println! can sometimes interleave output lines, 
-    //         // but for a simple counter it's usually readable enough.
-    //         println!("{}/{}", completed, total_jobs);
+            // Print progress. 
+            // Note: In parallel code, println! can sometimes interleave output lines, 
+            // but for a simple counter it's usually readable enough.
+            println!("{}/{}", completed, total_jobs);
 
-    //         result
-    //     })
-    //     .sum();
-    let mut out: u128 = 0;
-    for i in 0..buttons.len() {
+            result
+        })
+        .sum();
+    // let mut out: u128 = 0;
+    // for i in 0..buttons.len() {
 
-        println!("{}/{}", i, buttons.len());
+    //     println!("{}/{}", i, buttons.len());
 
-        out += find_minimum2(&buttons[i], &answers[i]);
+    //     out += find_minimum2(&buttons[i], &answers[i]);
 
-    }
+    // }
 
     out
 
@@ -436,13 +436,13 @@ fn first_half_check() {
     let answer: Option<u128> = FIRST_HALF_ANSWER;
     match answer {
         None => {println!("First half test answer not given")},
-        Some(a) => { println!("First half {}", {if a == first_half(true){"passing!"} else {"FAILING"}})},
+        Some(a) => { println!("First half {}", {if a == first_half(true){"passing!".green()} else {"FAILING".red()}})},
     }
 }
 fn second_half_check() {
     let answer: Option<u128> = SECOND_HALF_ANSWER;
     match answer {
         None => {println!("Second half test answer not given")},
-        Some(a) => { println!("Second half {}", {if a == first_half(true){"passing!"} else {"FAILING"}})},
+        Some(a) => { println!("Second half {}", {if a == second_half(true){"passing!".green()} else {"FAILING".red()}})},
     }
 }
