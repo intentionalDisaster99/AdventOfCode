@@ -1,6 +1,6 @@
-#[path = "board.rs"]
-mod board;
-use crate::board::*;
+#[path = "utils.rs"]
+mod utils;
+use utils::*;
 // I actually have no idea where this file wants the files to be located. I haven't changed this from day to day and it only worked in different places each day ¯\_(ツ)_/¯
 
 // Stuff to read the input
@@ -25,11 +25,11 @@ pub fn read_csv(s: &String) -> Vec<String> {
 }
 
 
-#[allow(dead_code)]
-pub fn get_board(input: Vec<String>) -> Board {
-    let mut data: Vec<Vec<char>> = vec![];
-    for row in input.iter() {
-        data.push(row.chars().collect::<Vec<char>>());
-    }
-    Board::new(data)
-}
+// #[allow(dead_code)]
+// pub fn get_board(input: Vec<String>) -> Board<> {
+//     let mut data: Vec<Vec<char>> = vec![];
+//     for row in input.iter() {
+//         data.push(row.chars().collect::<Vec<char>>());
+//     }
+//     Board::new(data)
+// }
