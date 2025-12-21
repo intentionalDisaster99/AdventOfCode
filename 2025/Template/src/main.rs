@@ -76,9 +76,12 @@ fn first_half(test: bool) -> u128 {
 
     // Testing out the matrix struct
 
-    let matrix = Matrix{num_cols: 4, num_rows: 3, data: vec![0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9, 10.0, 11.0]};
-    println!("{:?}", matrix);
-    
+    let mut matrix = Matrix{num_cols: 4, num_rows: 3, data: vec![0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9, 10.0, 11.0]};
+    println!("{}", matrix);
+
+    matrix.add_rows(0, 1, -1.0);
+    println!("{}", matrix);
+
     0
 
 }

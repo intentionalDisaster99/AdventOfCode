@@ -173,14 +173,33 @@ impl std::fmt::Display for Pos3 {
 
 
 // -------------------------------- Simple Matrix --------------------------------
+#[allow(dead_code)]
 pub struct Matrix {
     pub num_rows: usize,
     pub num_cols: usize,
     pub data: Vec<f64>,
 }
 
-// Basic operations for a matrix
+// Basic operations for any class/struct
 impl Matrix {
+
+    pub fn new(num_rows: usize, num_cols: usize, data: Vec<f64>) -> Matrix {
+        Matrix {num_rows, num_cols, data}
+    }
+
+    pub fn from_vectors(input: &Vec<Vec<f64>>) -> Matrix {
+        let data = input.iter().flatten().map(|a|*a).collect::<Vec<f64>>();
+        Matrix::new(input.len(), input[0].len(), data)
+    }
+
+    pub fn get(&self, row: usize, col: usize) -> f64 {
+        self.data[row * self.num_cols + col]
+    }
+
+    pub fn set(&mut self, new_val: f64, row: usize, col: usize) -> &mut Self {
+        self.data[row * self.num_cols + col] = new_val;
+        self
+    }
 
 }
 
@@ -190,8 +209,6 @@ impl Mul for Matrix {
 
     fn mul(self, other: Self) -> Self {
 
-
-
         todo!();
     }
 }
@@ -200,8 +217,6 @@ impl Add for Matrix {
 
     fn add(self, other: Self) -> Self {
 
-
-
         todo!();
     }
 }impl Sub for Matrix {
@@ -209,33 +224,105 @@ impl Add for Matrix {
 
     fn sub(self, other: Self) -> Self {
 
-
-
         todo!();
     }
 }
 
-// Displaying in a pretty way
-impl fmt::Debug for Matrix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let col_offset = self.num_cols * 6 + 1;
+// Fun linear algebra stuff
+impl Matrix {
+
+    /*
+        Pseudocode I stole from wikipedia
+        h := 1 /* Initialization of the pivot row */
+k := 1 /* Initialization of the pivot column */
+
+while h ≤ m and k ≤ n:
+    /* Find the k-th pivot: */
+    i_max := argmax (i = h ... m, abs(A[i, k]))
+    if A[i_max, k] = 0:
+        /* No pivot in this column, pass to next column */
+        k := k + 1
+    else:
+        swap rows(h, i_max)
+        /* Do for all rows below pivot: */
+        for i = h + 1 ... m:
+            f := A[i, k] / A[h, k]
+            /* Fill with zeros the lower part of pivot column: */
+            A[i, k] := 0
+            /* Do for all remaining elements in current row: */
+            for j = k + 1 ... n:
+                A[i, j] := A[i, j] - A[h, j] * f
+        /* Increase pivot row and column */
+        h := h + 1
+        k := k + 1 
+
+     */
+
+    pub fn row_reduce(&mut self) -> Self {
         
-        for row in 0..=self.num_rows {
+        // We want to get the top left to be one, 
+        let divisor = self.get(0, 0);
+
+        todo!();
+
+    }
+
+}
+
+// Row operations
+impl Matrix {
+
+    pub fn multiply_row(&mut self, scalar: f64, row_num: usize) -> &mut Self {
+        for i in (row_num * self.num_cols)..((row_num + 1) * self.num_cols) {
+            self.data[i] *= scalar
+        }
+        self
+    }
+
+    pub fn swap_row(&mut self, row_a: usize, row_b: usize) -> &mut Self {
+        for i in 0..self.num_cols {
+            (self.data[self.num_cols * row_a + i], self.data[self.num_cols * row_b + i]) = (self.data[self.num_cols * row_b + i], self.data[self.num_cols * row_a + i]);
+        }
+        self
+    }
+
+    pub fn add_rows(&mut self, row_to_add_to: usize, row_to_add: usize, scalar: f64) -> &mut Self {
+        for i in 0..self.num_cols {
+            self.data[self.num_cols * row_to_add_to + i] += self.data[self.num_cols * row_to_add + i] * scalar; 
+        }
+        self
+    }
+
+}
+
+
+// Displaying in a pretty way
+impl fmt::Display for Matrix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        let max_length = {
+            let mut max_length = 0;
+            for element in self.data.iter() {
+                max_length = format!( "{:.3}, ", element).len().max(max_length)
+            }
+            max_length
+        };
+
+        let col_offset = self.num_cols * max_length + (self.num_cols - 1) * 2;
+        
+        for row in 0..self.num_rows {
 
             // If the last or first, we can print a corner piece
             if row == 0 {
                 writeln!(f, "┌ { :^col_offset$} ┐", "")?;
                 write!(f, "│ ")?;
-            } else if row == self.num_cols {
-                writeln!(f, "└ { :^col_offset$} ┘", "")?;
-                break
             } else {
                 write!(f, "│ ")?;
             }
 
             // Printing the actual data
             for col in 0..self.num_cols {
-                write!(f, "{:>.3}", self.data[col + self.num_cols * row])?;
+                write!(f, "{:>max_length$.3}", self.data[col + self.num_cols * row])?;
                 
                 // We only want the comma if this isn't the last column
                 if col != self.num_cols - 1 {
@@ -246,6 +333,9 @@ impl fmt::Debug for Matrix {
            writeln!(f, " │")?;
 
         }
+
+        // The bottom of the matrix
+        writeln!(f, "└ { :^col_offset$} ┘", "")?;
 
         Ok(())
     }
