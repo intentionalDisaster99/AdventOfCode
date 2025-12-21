@@ -326,7 +326,7 @@ impl fmt::Display for Matrix {
                 
                 // We only want the comma if this isn't the last column
                 if col != self.num_cols - 1 {
-                    write!(f, ", ")?;
+                    write!(f, ",")?;
                 } 
             }
 
