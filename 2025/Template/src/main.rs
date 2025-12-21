@@ -71,16 +71,20 @@ fn first_half(test: bool) -> u128 {
     let raw_data: String = read_contents(test);
     let data: Vec<String> = get_lines(&raw_data);
 
-
-
-
     // Testing out the matrix struct
 
-    let mut matrix = Matrix{num_cols: 4, num_rows: 3, data: vec![0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9, 10.0, 11.0]};
-    println!("{}", matrix);
+    let mut matrix = Matrix{num_cols: 3, num_rows: 2, data: vec![1.0, 5.0, 1.0, 2.0, 11.0, 5.0]};
+    println!("Initial:\n{}", matrix);
 
-    matrix.add_rows(0, 1, -1.0);
-    println!("{}", matrix);
+    matrix.reduced_row_echelon();
+    // matrix.add_rows(0, 1, -0.3333);
+    println!("Calculated:\n{}", matrix);
+
+    let ans = Matrix::from_vectors(&vec![
+        vec![1.0, 0.0, -14.0],
+        vec![0.0, 1.0, 3.0]
+    ]);
+    println!("Should be:\n{}", ans);
 
     0
 

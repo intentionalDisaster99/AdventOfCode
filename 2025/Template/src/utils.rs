@@ -1,6 +1,7 @@
 
 use std::fmt;
 use std::ops::{Add, Mul, Sub, Div};
+use std::thread::current;
 
 
 // -------------------------------- Simple Board --------------------------------
@@ -233,39 +234,184 @@ impl Matrix {
 
     /*
         Pseudocode I stole from wikipedia
-        h := 1 /* Initialization of the pivot row */
-k := 1 /* Initialization of the pivot column */
+        row := 0 /* Initialization of the pivot row */
+        col := 0 /* Initialization of the pivot column */ k
 
-while h ≤ m and k ≤ n:
-    /* Find the k-th pivot: */
-    i_max := argmax (i = h ... m, abs(A[i, k]))
-    if A[i_max, k] = 0:
-        /* No pivot in this column, pass to next column */
-        k := k + 1
-    else:
-        swap rows(h, i_max)
-        /* Do for all rows below pivot: */
-        for i = h + 1 ... m:
-            f := A[i, k] / A[h, k]
-            /* Fill with zeros the lower part of pivot column: */
-            A[i, k] := 0
-            /* Do for all remaining elements in current row: */
-            for j = k + 1 ... n:
-                A[i, j] := A[i, j] - A[h, j] * f
-        /* Increase pivot row and column */
-        h := h + 1
-        k := k + 1 
+        while row ≤ m and col ≤ n:
+            /* Find the col-th pivot: */
+            pivot_row := argmax (i = row ... self.num_rows, abs(matrix[i, col]))
+            if matrix[i_max, col] = 0:
+                /* No pivot in this column, pass to next column */
+                col := col + 1
+            else:
+                swap rows(row, pivot_row)
+                /* Do for all rows below pivot: */
+                for i = row + 1 ... m:
+                    scalar := matrix[i, col] / matrix[row, col]
+                    /* Fill with zeros the lower part of pivot column: */
+                    matrix[i, col] := 0
+                    /* Do for all remaining elements in current row: */
+                    for j = col + 1 ... n:
+                        matrix[i, j] := matrix[i, j] - matrix[row, j] * scalar
+                /* Increase pivot row and column */
+                row += 1
+                col += 1 
 
      */
 
-    pub fn row_reduce(&mut self) -> Self {
+    pub fn row_echelon(&mut self) -> &mut Self {
         
-        // We want to get the top left to be one, 
-        let divisor = self.get(0, 0);
+        let mut row = 0;
+        let mut col = 0;
 
-        todo!();
+        while row < self.num_rows && col < self.num_cols {
+
+            // Finding this column's pivot (we can search the rest of this column continue down and to the right)
+            let pivot_row = (row..self.num_rows).fold(0, |max_row_index, current_row_index| {
+                if self.data[current_row_index * self.num_cols + col] > self.data[max_row_index * self.num_cols + col] {
+                    return current_row_index
+                }
+                max_row_index
+            });
+
+
+            // If the maximum element we just found is zero, then we don't have a pivot in this column
+            // If the one we found is behind the row we are on (meaning we didn't find one) we can skip too
+            if self.data[pivot_row * self.num_cols + col] == 0.0 || pivot_row <= row {
+                // On to the next column
+                col += 1;
+                continue;
+            }
+
+            // Swapping so that the row with the maximum value is where we want it
+            self.swap_row(row, pivot_row);
+
+            // For every row below where we found the pivot, we want to multiply by a scalar that causes it to go to zero when we add the current row
+            for index_row_to_change in (row + 1)..self.num_rows {
+
+                // Multiplying by the scalar
+                let scalar = - self.data[index_row_to_change * self.num_cols + col] / self.data[row * self.num_cols + col];
+
+                // Adding the current row to that one
+                self.add_rows(index_row_to_change, row, scalar);
+
+                // Making sure that everything directly below the pivot is exactly zero (this gets rid of floating point error)
+                self.data[col + index_row_to_change * self.num_cols] = 0.0;
+
+            }
+
+            col += 1;
+            row += 1;
+
+        }    
+
+        self
 
     }
+
+    pub fn reduced_row_echelon(&mut self) -> &mut Self {
+        
+        let mut row = 0;
+        let mut col = 0;
+
+        while row < self.num_rows && col < self.num_cols {
+
+            // println!("Row: {row}, Col: {col}: \n{self}");
+
+            // Finding this column's pivot (we can search the rest of this column continue down and to the right)
+            let pivot_row = (row..self.num_rows).fold(usize::MAX, |max_row_index, current_row_index| {
+                if max_row_index == usize::MAX { return current_row_index; }
+                if self.data[current_row_index * self.num_cols + col] > self.data[max_row_index * self.num_cols + col] {
+                    return current_row_index
+                }
+                max_row_index
+            });
+
+            // println!("The pivot we have is at ")
+
+
+            // If the maximum element we just found is zero, then we don't have a pivot in this column
+            // If the one we found is behind the row we are on (meaning we didn't find one) we can skip too
+            if pivot_row == usize::MAX || self.data[pivot_row * self.num_cols + col] == 0.0 {
+                // On to the next column
+                // println!("Didn't find a pivot in column {col}");
+                col += 1;
+                continue;
+            } //else {println!("Pivot found at row: {pivot_row}, col: {col} of {}", self.data[pivot_row * self.num_cols + col]);}
+
+            // Swapping so that the row with the maximum value is where we want it
+            self.swap_row(row, pivot_row);
+
+            // println!("Pivot is now moved to row {row}:\n{self}");
+
+            // Converting the pivot to 1
+            self.multiply_row(1.0/self.data[row * self.num_cols + col], row);
+
+            // println!("Pivot should be 1:\n{self}");
+
+            // For every row below where we found the pivot, we want to multiply by a scalar that causes it to go to zero when we add the current row
+            for index_row_to_change in (row + 1)..self.num_rows {
+
+                // Multiplying by the scalar
+                let scalar = - self.data[index_row_to_change * self.num_cols + col] / self.data[row * self.num_cols + col];
+
+                // Adding the current row to that one
+                self.add_rows(index_row_to_change, row, scalar);
+
+                // Making sure that everything directly below the pivot is exactly zero (this gets rid of floating point error)
+                self.data[col + index_row_to_change * self.num_cols] = 0.0;
+
+            }
+
+            // println!("Only a pivot should be in column {col}\n{self}");
+
+            // Make sure that there is no floating error by making the rest of the rows below the pivot zero
+
+            col += 1;
+            row += 1;
+
+        }    
+
+        // Going through and clearing out the rest to bring it to reduced echelon form
+        row = self.num_rows - 1;
+        col = self.num_cols - 1;
+        loop {
+
+            // Breaking if we have reached the bounds (row is 1 because we shouldn't need to play with the top row)
+            if row == 0 || col == 0 {
+                break;
+            }
+
+            // Searching for this row's pivot
+            let mut pivot_col = usize::MAX;
+            for i in 0..=col {
+                if (self.data[i + self.num_cols * row] - 1.0).abs() < 1e-6 {
+                    pivot_col = i;
+                    break;
+                }
+            }
+            
+            // If we didn't find one, then we can go up a row
+            if pivot_col == usize::MAX {
+                row -= 1;
+                if row == 2 { break; }
+                continue;
+            }
+            
+            // Making every element above this pivot equal zero
+            for row_to_change in 0..row {
+                self.add_rows(row_to_change, row, -self.data[row_to_change * self.num_cols + pivot_col]);
+            }
+
+            row -= 1;
+            col -= 1;
+
+        }
+
+        self
+
+    }
+
 
 }
 
@@ -326,7 +472,7 @@ impl fmt::Display for Matrix {
                 
                 // We only want the comma if this isn't the last column
                 if col != self.num_cols - 1 {
-                    write!(f, ",")?;
+                    write!(f, ", ")?;
                 } 
             }
 
