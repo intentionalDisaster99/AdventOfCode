@@ -25,11 +25,12 @@ pub fn read_csv(s: &String) -> Vec<String> {
 }
 
 
-#[allow(dead_code)]
-pub fn get_board(input: Vec<String>) -> Board {
-    let mut data: Vec<Vec<char>> = vec![];
-    for row in input.iter() {
-        data.push(row.chars().collect::<Vec<char>>());
-    }
-    Board::new(data)
-}
+// TODO Update this to use the generic Board version
+// #[allow(dead_code)]
+// pub fn get_board(input: Vec<String>) -> Board<char> {
+//     let mut data: Vec<Vec<char>> = vec![];
+//     for row in input.iter() {
+//         data.push(row.chars().collect::<Vec<char>>());
+//     }
+//     Board::new(data)
+// }

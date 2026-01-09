@@ -231,7 +231,6 @@ fn flood_fill_scan_line(start: Pos, grid: &mut Vec<u8>, width: usize, height: us
         let y = pos.y;
         let row_idx = y * width;
 
-        
         while x > 0 && grid[row_idx + x - 1] == 0 { x -= 1; }
 
         let mut span_above = false;
@@ -239,7 +238,6 @@ fn flood_fill_scan_line(start: Pos, grid: &mut Vec<u8>, width: usize, height: us
 
         while x < width && grid[row_idx + x] == 0 {
             grid[row_idx + x] = 1;
-
             if y > 0 {
                 if grid[(y - 1) * width + x] == 0 {
                     if !span_above { q.push_back(Pos::new(x, y - 1)); span_above = true; }

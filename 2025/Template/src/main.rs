@@ -7,8 +7,8 @@ use std::time::Instant;
 use colored::Colorize;
 
 
-const FIRST_HALF_ANSWER: Option<u128> = None;
-const SECOND_HALF_ANSWER: Option<u128> = None;
+const FIRST_HALF_ANSWER: Option<u128> = Some(0);
+const SECOND_HALF_ANSWER: Option<u128> = Some(33);
 
 fn main() {
     // Running and timing everything (Also printing out the stdout)
@@ -76,7 +76,7 @@ fn first_half(test: bool) -> u128 {
     let mut matrix = Matrix{num_cols: 3, num_rows: 2, data: vec![1.0, 5.0, 1.0, 2.0, 11.0, 5.0]};
     println!("Initial:\n{}", matrix);
 
-    matrix.reduced_row_echelon();
+    matrix.transpose();
     // matrix.add_rows(0, 1, -0.3333);
     println!("Calculated:\n{}", matrix);
 
@@ -93,9 +93,69 @@ fn first_half(test: bool) -> u128 {
 fn second_half(test: bool) -> u128 {
     
     let raw_data: String = read_contents(test);
-    let data: Vec<String> = get_lines(&raw_data);
+    let mut data: Vec<String> = get_lines(&raw_data);
 
     let mut out: u128 = 0;
+
+    // Parsing the data
+    let mut answers: Vec<Vec<usize>> = vec![];
+    let mut buttons: Vec<Vec<Vec<u8>>> = vec![];
+    for row in data.iter_mut() {
+        row.pop(); // Getting rid of the last }
+        let split_row = row.split(" {").collect::<Vec<&str>>();
+        answers.push(split_row[split_row.len() - 1]
+            .to_string()
+            .split(",")
+            .map( |num|
+                num.parse::<usize>().unwrap()
+            ).collect::<Vec<usize>>()
+        );
+
+        let mut this_row_buttons: Vec<Vec<u8>> = vec![];
+
+        for button_raw in row.split(" ").collect::<Vec<&str>>().iter().skip(1).rev().skip(1).rev() {
+            // Now we have a (1, 1, , 2), so we need to split it again
+            let mut button: Vec<u8> = vec![];
+            for number in button_raw.chars().collect::<Vec<char>>().iter().skip(1).rev().skip(1).rev() {
+                if *number == ',' { continue; } // I am well aware there is a better way, but this is faster that figuring it out
+                button.push(number.to_string().parse::<u8>().expect("Bad unwrap of a button number"));
+            }
+            this_row_buttons.push(button);
+        }
+
+        buttons.push(this_row_buttons);
+
+    }
+
+    // Now we need to solve each system of equations and all the solutions to the output
+    for i in 0..answers.len() {
+
+        let mut matrix = {
+
+            let mut matrix: Vec<Vec<f64>> = vec![];
+
+            // Each activation set makes up one column
+            for column in buttons[i].iter() {
+
+                let mut column_to_add: Vec<f64> = vec![0.0; answers[i].len()];
+
+                for element in column.iter() {
+                    column_to_add[*element as usize] = 1.0;
+                }
+                matrix.push(column_to_add);
+
+            }       
+            println!("{:?}", matrix);
+            Matrix::from_vectors(&matrix)
+
+        };
+        println!("{:#?}", matrix.transpose().reduced_row_echelon().solve(answers[i].iter().map(|a| *a as f64).collect()));
+
+        println!("Rows: {}, Cols: {}", matrix.num_rows, matrix.num_cols);
+        println!("{}", matrix);
+        // out += solve_for_integers(matrix, );
+    }
+
 
     out
 }

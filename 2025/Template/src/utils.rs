@@ -411,7 +411,71 @@ impl Matrix {
         self
 
     }
+    
+    // Solving with Gaussian elimination
+    // Does not integerize or normalize the output vector (plugs in 1 for each free variable)
+    pub fn solve(&self, b: Vec<f64>) -> Vec<f64> {
+        if b.len() != self.num_rows {
+            panic!("Sizes are not compatible! Could not solve.");
+        }
 
+        let mut out = vec![1.0; b.len()];
+        
+        // Now for each pivot we need to solve for (we assume everything else is 0.0)
+        for col_index in 0..self.num_cols {
+
+            // Finding the row_index of the pivot in this column 
+            let mut row_index = usize::MAX;
+            for i in (self.num_rows - 1)..=0 {
+                if (self.data[col_index + self.num_cols * i] - 1.0).abs() < 1e-6 {
+                    row_index = i;
+                    break;
+                }
+            }
+
+            // If we didn't find a pivot, then we can just continue on to the next column
+            if row_index == usize::MAX {
+                continue;
+            }
+
+            // We have a pivot, so we can play with this row
+            let mut total = b[row_index] + 1.0;
+            for i in 0..self.num_cols {
+                total -= self.data[i + self.num_cols * row_index];
+            }
+            out[row_index] = total;
+
+        }
+        // As of right now, this only returns ones
+
+        out
+
+    }
+
+    pub fn transpose(&mut self) -> &mut Self {
+        let mut new_data = vec![0.0; self.num_cols * self.num_rows];
+        for row in 0..self.num_rows {
+            for col in 0..self.num_cols {
+                // println!("{} -> {}", row * self.num_rows + col, col * self.num_rows + row);
+                (self.data[row * self.num_cols + col], new_data[col * self.num_rows + row]) = (new_data[col * self.num_rows + row], self.data[row * self.num_cols + col]);  
+            }
+        }
+        self.data = new_data;
+        (self.num_rows, self.num_cols) = (self.num_cols, self.num_rows);
+        self
+    }
+
+    // pub fn transposed(&self) -> &mut Self {
+    //     println!("-----------------------------------------------------\nBefore:\n{}", self);
+    //     let mut out_vector = vec![vec![0.0; self.num_cols]; self.num_rows];
+    //     for row in 0..self.num_rows {
+    //         for col in 0..self.num_cols {
+    //             (self.data[row * self.num_rows + col], self.data[col * self.num_cols + row]) = (self.data[col * self.num_cols + row], self.data[row * self.num_rows + col]);
+    //         }
+    //     }
+    //     println!("After:\n{}", out);
+    //     self
+    // }
 
 }
 
