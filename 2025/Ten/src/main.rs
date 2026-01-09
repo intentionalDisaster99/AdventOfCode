@@ -232,8 +232,8 @@ fn second_half(test: bool) -> u128 {
     // My next thought is optimization problem, but there isn't exactly a clear function for it.
 
     // I will make a function to make iteration nicer
-    let total_jobs = 171;
-    let counter = AtomicUsize::new(0);
+    // let total_jobs = 6;
+    // let counter = AtomicUsize::new(0);
 
     let out = buttons.par_iter()
         .zip(answers.par_iter())
