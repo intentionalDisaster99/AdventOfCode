@@ -1,65 +1,87 @@
 // This makes a board of characters that we can easily change and read from and index nicely
 // It is indexed simply as .get(Pos)
-
+use std::fmt;
 
 #[derive(Clone, Hash, Eq, PartialEq)]
-pub struct Board {
-    pub board: Vec<Vec<char>>,
+pub struct Board<T> {
+    pub data: Vec<T>,
+    pub width: usize,
+    pub height: usize,
 }
-
 
 
 #[allow(dead_code)]
-impl Board {
-
-    pub fn new(data: Vec<Vec<char>>) -> Board {
-        Board {board: data}
+impl<T> Board<T>
+where
+    T: Copy + PartialEq + fmt::Debug, // Constraints for ease of use
+{
+    /// Creates a new empty board with default values
+    pub fn new(width: usize, height: usize, default_val: T) -> Board<T> {
+        Board {
+            data: vec![default_val; width * height],
+            width,
+            height,
+        }
     }
 
-    pub fn find(&self, c: char) -> Option<Pos> {
-        for (y, row) in self.board.iter().enumerate() {
-            for (x, element) in row.iter().enumerate() {
-                if *element == c {
-                    return Some(Pos::new(x, y));
-                }
-            }
-        }
-        None
+    /// Helper to convert raw 2D vectors (like from parsing lines) into 1D
+    pub fn from_2d(input: Vec<Vec<T>>) -> Board<T> {
+        let height = input.len();
+        let width = if height > 0 { input[0].len() } else { 0 };
+        
+        // Flatten the nested vectors into one
+        let data = input.into_iter().flatten().collect();
+
+        Board { data, width, height }
+    }
+
+    pub fn find(&self, target: T) -> Option<Pos> {
+        // Iterate via index/enumerate, then calculate x/y from the index
+        self.data.iter().position(|&x| x == target).map(|idx| {
+            let y = idx / self.width;
+            let x = idx % self.width;
+            Pos::new(x, y)
+        })
     }
 
     pub fn is_valid_location(&self, pos: &Pos) -> bool {
-        if pos.y >= self.board.len() || pos.x >= self.board[0].len() { return false; }
-        true
+        pos.x < self.width && pos.y < self.height
     }
 
-    pub fn set(&mut self, pos: &Pos, val: char) {
-        // We are assuming they already checked bounds
-        self.board[pos.y][pos.x] = val;
+    pub fn set(&mut self, pos: &Pos, val: T) {
+        let idx = self.get_index(pos);
+        self.data[idx] = val;
     }
 
-    pub fn get(&self, pos: &Pos) -> char {
-        // We are assuming they already checked bounds
-        self.board[pos.y][pos.x]
+    pub fn get(&self, pos: &Pos) -> T {
+        self.data[self.get_index(pos)]
     }
 
+    /// Internal helper to calculate 1D index from 2D coordinate
+    #[inline(always)]
+    fn get_index(&self, pos: &Pos) -> usize {
+        pos.y * self.width + pos.x
+    }
 }
 
-impl std::fmt::Display for Board {
-        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for row in &self.board {
-            for c in row.iter() {
-                write!(f, "{}", c)?; 
+// Display implementation for Board
+// Slices the 1D array into chunks of 'width' to print rows
+impl<T: fmt::Display> fmt::Display for Board<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for row in self.data.chunks(self.width) {
+            for item in row {
+                write!(f, "{}", item)?;
             }
-            writeln!(f, "")?; 
-
+            writeln!(f)?;
         }
         Ok(())
     }
 }
 
-impl std::fmt::Debug for Board {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for row in &self.board {
+// Debug implementation
+impl<T: fmt::Debug> fmt::Debug for Board<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for row in self.data.chunks(self.width) {
             writeln!(f, "{:?}", row)?;
         }
         Ok(())
@@ -95,7 +117,7 @@ impl Pos {
     }
 
     pub fn div(&self, scalar: f64) -> Pos {
-        Pos::new((self.x as f64 / scalar) as usize,(self.x as f64 / scalar) as usize)
+        Pos::new((self.x as f64 / scalar) as usize,(self.y as f64 / scalar) as usize)
     }
 }
 
